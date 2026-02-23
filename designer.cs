@@ -1,4 +1,4 @@
-namespace TurkeyMapApplication
+namespace TurkiyeHarita
 {
     partial class Form1
     {
