@@ -34,15 +34,13 @@ namespace TurkiyeHarita
         private void InitializeMap()
         {
             // Choosing map provider
-            mapControl.MapProvider = GMap.NET.MapProviders.WikiMapiaMapProvider.Instance;
-            // Eğer Bing kullanacaksan:
-            // mapControl.MapProvider = GMap.NET.MapProviders.BingMapProvider.Instance;
-
+            mapControl.MapProvider = GMap.NET.MapProviders.BingMapProvider.Instance;
+            
             GMap.NET.GMaps.Instance.Mode = GMap.NET.AccessMode.ServerAndCache;
 
             // Maximum and minimum zoom settings
             mapControl.MinZoom = 4;
-            mapControl.MaxZoom = 14;
+            mapControl.MaxZoom = 20;
             mapControl.Zoom = 9;
 
             // Initial position
