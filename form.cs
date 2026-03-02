@@ -11,7 +11,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
 namespace TurkiyeHarita
 {
     public partial class Form1 : Form
@@ -19,12 +18,17 @@ namespace TurkiyeHarita
         public Form1()
         {
             InitializeComponent();
-
             InitializeMap();
 
             // Connect button click event
             goButton.Click += GoButton_Click;
-            this.AcceptButton = goButton;  // To go to coordinates with enter click
+            this.AcceptButton = goButton;
+            // To go to coordinates with enter click
+
+            // NEW: Show center (red cross) coordinate live
+            mapControl.OnPositionChanged += MapControl_OnPositionChanged;
+            mapControl.OnMapZoomChanged += MapControl_OnMapZoomChanged;
+            UpdateCenterCoordinateLabel();
         }
 
         private void InitializeMap()
@@ -35,6 +39,94 @@ namespace TurkiyeHarita
 
             // Maximum and minimum zoom settings
             mapControl.MinZoom = 4;
+            mapControl.MaxZoom = 14;
+            mapControl.Zoom = 9;
+
+            // Initial position
+            mapControl.Position = new PointLatLng(39.0, 35.0);
+
+            // NEW: Update label after initial position
+            UpdateCenterCoordinateLabel();
+        }
+
+        private void GoButton_Click(object sender, EventArgs e)
+        {
+            // Take valid latitude value from input
+            bool latitudeValid = double.TryParse(
+                latitudeTextBox.Text,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out double latitude);
+
+            // Take valid longitude value from input
+            bool longitudeValid = double.TryParse(
+                longitudeTextBox.Text,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out double longitude);
+
+            // Gives warning if input coordinates is invalid
+            if (!latitudeValid || !longitudeValid)
+            {
+                MessageBox.Show("Please enter valid coordinates using a dot.\nExample: 41.0151");
+                return;
+            }
+
+            // Gives warning if it is outside of the Earth's borders
+            if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)
+            {
+                MessageBox.Show("Coordinates are out of range.");
+                return;
+            }
+
+            // Gives warning if it is outside of the Turkiye's borders
+            if (latitude < 36 || latitude > 42.5 || longitude < 26 || longitude > 45)
+            {
+                MessageBox.Show("Coordinates are outside Turkey.");
+                return;
+            }
+
+            // New position according to the input coordinates
+            mapControl.Position = new PointLatLng(latitude, longitude);
+
+            if (mapControl.Zoom < 12)
+            {
+                mapControl.Zoom = 9;
+            }
+
+            // NEW: Update label after moving
+            UpdateCenterCoordinateLabel();
+        }
+
+        // NEW: Fires when map center changes (drag)
+        private void MapControl_OnPositionChanged(PointLatLng point)
+        {
+            UpdateCenterCoordinateLabel();
+        }
+
+        // NEW: Fires when zoom changes
+        private void MapControl_OnMapZoomChanged()
+        {
+            UpdateCenterCoordinateLabel();
+        }
+
+        // NEW: Updates label with the coordinate under the center cross
+        private void UpdateCenterCoordinateLabel()
+        {
+            if (centerCoordinateLabel == null) return;
+
+            var center = mapControl.Position;
+
+            centerCoordinateLabel.Text =
+                "Center: " +
+                center.Lat.ToString("F6", CultureInfo.InvariantCulture) +
+                ", " +
+                center.Lng.ToString("F6", CultureInfo.InvariantCulture) +
+                "   Zoom: " +
+                mapControl.Zoom.ToString("F1", CultureInfo.InvariantCulture);
+        }
+    }
+}            mapControl.MinZoom = 4;
             mapControl.MaxZoom = 14;
             mapControl.Zoom = 9;
 
