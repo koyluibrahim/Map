@@ -104,11 +104,12 @@ namespace TurkiyeHarita
             // 
             this.mapControl.Bearing = 0F;
             this.mapControl.CanDragMap = true;
+            this.mapControl.DragButton = System.Windows.Forms.MouseButtons.Left;
             this.mapControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mapControl.EmptyTileColor = System.Drawing.Color.Navy;
             this.mapControl.GrayScaleMode = false;
             this.mapControl.HelperLineOption = GMap.NET.WindowsForms.HelperLineOptions.DontShow;
-            this.mapControl.LevelsKeepInMemory = 5;
+            this.mapControl.LevelsKeepInMemmory = 5;
             this.mapControl.Location = new System.Drawing.Point(0, 60);
             this.mapControl.MarkersEnabled = true;
             this.mapControl.MaxZoom = 18;
@@ -136,7 +137,7 @@ namespace TurkiyeHarita
             this.Controls.Add(this.mapControl);
             this.Controls.Add(this.controlPanel);
             this.Name = "Form1";
-            this.Text = "Turkey Map Application";
+            this.Text = "Turkiye Harita";
 
             this.controlPanel.ResumeLayout(false);
             this.controlPanel.PerformLayout();
