@@ -3,13 +3,15 @@ namespace TurkiyeHarita
     partial class Form1
     {
         private System.ComponentModel.IContainer components = null;
-
         private System.Windows.Forms.Panel controlPanel;
         private System.Windows.Forms.Label latitudeLabel;
         private System.Windows.Forms.TextBox latitudeTextBox;
         private System.Windows.Forms.Label longitudeLabel;
         private System.Windows.Forms.TextBox longitudeTextBox;
         private System.Windows.Forms.Button goButton;
+
+        // NEW
+        private System.Windows.Forms.Label centerCoordinateLabel;
 
         private GMap.NET.WindowsForms.GMapControl mapControl;
 
@@ -23,7 +25,6 @@ namespace TurkiyeHarita
         }
 
         #region Windows Form Designer generated code
-
         private void InitializeComponent()
         {
             this.controlPanel = new System.Windows.Forms.Panel();
@@ -32,8 +33,11 @@ namespace TurkiyeHarita
             this.longitudeLabel = new System.Windows.Forms.Label();
             this.longitudeTextBox = new System.Windows.Forms.TextBox();
             this.goButton = new System.Windows.Forms.Button();
-            this.mapControl = new GMap.NET.WindowsForms.GMapControl();
 
+            // NEW
+            this.centerCoordinateLabel = new System.Windows.Forms.Label();
+
+            this.mapControl = new GMap.NET.WindowsForms.GMapControl();
             this.controlPanel.SuspendLayout();
             this.SuspendLayout();
 
@@ -45,6 +49,10 @@ namespace TurkiyeHarita
             this.controlPanel.Controls.Add(this.longitudeLabel);
             this.controlPanel.Controls.Add(this.latitudeTextBox);
             this.controlPanel.Controls.Add(this.latitudeLabel);
+
+            // NEW
+            this.controlPanel.Controls.Add(this.centerCoordinateLabel);
+
             this.controlPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.controlPanel.Location = new System.Drawing.Point(0, 0);
             this.controlPanel.Name = "controlPanel";
@@ -99,6 +107,15 @@ namespace TurkiyeHarita
             this.goButton.Text = "Go";
             this.goButton.UseVisualStyleBackColor = true;
 
+            // NEW
+            // centerCoordinateLabel
+            this.centerCoordinateLabel.AutoSize = true;
+            this.centerCoordinateLabel.Location = new System.Drawing.Point(550, 20);
+            this.centerCoordinateLabel.Name = "centerCoordinateLabel";
+            this.centerCoordinateLabel.Size = new System.Drawing.Size(56, 15);
+            this.centerCoordinateLabel.TabIndex = 5;
+            this.centerCoordinateLabel.Text = "Center: -";
+
             // 
             // mapControl
             // 
@@ -132,18 +149,4 @@ namespace TurkiyeHarita
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(984, 761);
-            this.Controls.Add(this.mapControl);
-            this.Controls.Add(this.controlPanel);
-            this.Name = "Form1";
-            this.Text = "Turkiye Harita";
-
-            this.controlPanel.ResumeLayout(false);
-            this.controlPanel.PerformLayout();
-            this.ResumeLayout(false);
-        }
-
-        #endregion
-    }
-}
+            this.AutoScaleMode = System.Windows
