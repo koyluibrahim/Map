@@ -35,6 +35,9 @@ namespace TurkiyeHarita
         {
             // Choosing map provider
             mapControl.MapProvider = GMap.NET.MapProviders.WikiMapiaMapProvider.Instance;
+            // Eğer Bing kullanacaksan:
+            // mapControl.MapProvider = GMap.NET.MapProviders.BingMapProvider.Instance;
+
             GMap.NET.GMaps.Instance.Mode = GMap.NET.AccessMode.ServerAndCache;
 
             // Maximum and minimum zoom settings
@@ -45,7 +48,7 @@ namespace TurkiyeHarita
             // Initial position
             mapControl.Position = new PointLatLng(39.0, 35.0);
 
-            // NEW: Update label after initial position
+            // NEW
             UpdateCenterCoordinateLabel();
         }
 
@@ -68,6 +71,7 @@ namespace TurkiyeHarita
             // Gives warning if input coordinates is invalid
             if (!latitudeValid || !longitudeValid)
             {
+                // FIX: string tek satır, derleme hatası olmasın
                 MessageBox.Show("Please enter valid coordinates using a dot.\nExample: 41.0151");
                 return;
             }
@@ -89,28 +93,29 @@ namespace TurkiyeHarita
             // New position according to the input coordinates
             mapControl.Position = new PointLatLng(latitude, longitude);
 
+            // (Senin mantığı korudum; sadece 12 yerine 9'a sabitliyor)
             if (mapControl.Zoom < 12)
             {
                 mapControl.Zoom = 9;
             }
 
-            // NEW: Update label after moving
+            // NEW
             UpdateCenterCoordinateLabel();
         }
 
-        // NEW: Fires when map center changes (drag)
+        // NEW
         private void MapControl_OnPositionChanged(PointLatLng point)
         {
             UpdateCenterCoordinateLabel();
         }
 
-        // NEW: Fires when zoom changes
+        // NEW
         private void MapControl_OnMapZoomChanged()
         {
             UpdateCenterCoordinateLabel();
         }
 
-        // NEW: Updates label with the coordinate under the center cross
+        // NEW
         private void UpdateCenterCoordinateLabel()
         {
             if (centerCoordinateLabel == null) return;
@@ -126,60 +131,4 @@ namespace TurkiyeHarita
                 mapControl.Zoom.ToString("F1", CultureInfo.InvariantCulture);
         }
     }
-}            mapControl.MinZoom = 4;
-            mapControl.MaxZoom = 14;
-            mapControl.Zoom = 9;
-
-            // Initial position
-            mapControl.Position = new PointLatLng(39.0, 35.0);
-        }
-
-        private void GoButton_Click(object sender, EventArgs e)
-        {
-            // Take valid latitude value from input
-            bool latitudeValid = double.TryParse(
-                latitudeTextBox.Text,
-                NumberStyles.Float,
-                CultureInfo.InvariantCulture,
-                out double latitude);
-
-            // Take valid longitude value from input
-            bool longitudeValid = double.TryParse(
-                longitudeTextBox.Text,
-                NumberStyles.Float,
-                CultureInfo.InvariantCulture,
-                out double longitude);
-
-            // Gives warning if input coordinates is invalid
-            if (!latitudeValid || !longitudeValid)
-            {
-                MessageBox.Show("Please enter valid coordinates using a dot. Example: 41.0151");
-                return;
-            }
-
-            // Gives warning if it is outside of the Earth's borders
-            if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)
-            {
-                MessageBox.Show("Coordinates are out of range.");
-                return;
-            }
-
-            // Gives warning if it is outside of the Turkiye's borders
-            if (latitude < 36 || latitude > 42.5 || longitude < 26 || longitude > 45)
-            {
-                MessageBox.Show("Coordinates are outside Turkey.");
-                return;
-            }
-
-            // New position according to the input coordinates
-            mapControl.Position = new PointLatLng(latitude, longitude);
-
-            if (mapControl.Zoom < 12)
-            {
-                mapControl.Zoom = 9;
-            }
-        }
-
-    }
-
 }
