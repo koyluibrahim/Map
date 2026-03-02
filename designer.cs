@@ -3,6 +3,7 @@ namespace TurkiyeHarita
     partial class Form1
     {
         private System.ComponentModel.IContainer components = null;
+
         private System.Windows.Forms.Panel controlPanel;
         private System.Windows.Forms.Label latitudeLabel;
         private System.Windows.Forms.TextBox latitudeTextBox;
@@ -25,6 +26,7 @@ namespace TurkiyeHarita
         }
 
         #region Windows Form Designer generated code
+
         private void InitializeComponent()
         {
             this.controlPanel = new System.Windows.Forms.Panel();
@@ -38,12 +40,13 @@ namespace TurkiyeHarita
             this.centerCoordinateLabel = new System.Windows.Forms.Label();
 
             this.mapControl = new GMap.NET.WindowsForms.GMapControl();
+
             this.controlPanel.SuspendLayout();
             this.SuspendLayout();
 
-            // 
+            //
             // controlPanel
-            // 
+            //
             this.controlPanel.Controls.Add(this.goButton);
             this.controlPanel.Controls.Add(this.longitudeTextBox);
             this.controlPanel.Controls.Add(this.longitudeLabel);
@@ -59,9 +62,9 @@ namespace TurkiyeHarita
             this.controlPanel.Size = new System.Drawing.Size(984, 60);
             this.controlPanel.TabIndex = 0;
 
-            // 
+            //
             // latitudeLabel
-            // 
+            //
             this.latitudeLabel.AutoSize = true;
             this.latitudeLabel.Location = new System.Drawing.Point(12, 20);
             this.latitudeLabel.Name = "latitudeLabel";
@@ -69,18 +72,18 @@ namespace TurkiyeHarita
             this.latitudeLabel.TabIndex = 0;
             this.latitudeLabel.Text = "Latitude";
 
-            // 
+            //
             // latitudeTextBox
-            // 
+            //
             this.latitudeTextBox.Location = new System.Drawing.Point(80, 16);
             this.latitudeTextBox.Name = "latitudeTextBox";
             this.latitudeTextBox.Size = new System.Drawing.Size(120, 23);
             this.latitudeTextBox.TabIndex = 1;
             this.latitudeTextBox.Text = "39.0";
 
-            // 
+            //
             // longitudeLabel
-            // 
+            //
             this.longitudeLabel.AutoSize = true;
             this.longitudeLabel.Location = new System.Drawing.Point(220, 20);
             this.longitudeLabel.Name = "longitudeLabel";
@@ -88,18 +91,18 @@ namespace TurkiyeHarita
             this.longitudeLabel.TabIndex = 2;
             this.longitudeLabel.Text = "Longitude";
 
-            // 
+            //
             // longitudeTextBox
-            // 
+            //
             this.longitudeTextBox.Location = new System.Drawing.Point(300, 16);
             this.longitudeTextBox.Name = "longitudeTextBox";
             this.longitudeTextBox.Size = new System.Drawing.Size(120, 23);
             this.longitudeTextBox.TabIndex = 3;
             this.longitudeTextBox.Text = "35.0";
 
-            // 
+            //
             // goButton
-            // 
+            //
             this.goButton.Location = new System.Drawing.Point(440, 15);
             this.goButton.Name = "goButton";
             this.goButton.Size = new System.Drawing.Size(90, 25);
@@ -107,8 +110,9 @@ namespace TurkiyeHarita
             this.goButton.Text = "Go";
             this.goButton.UseVisualStyleBackColor = true;
 
-            // NEW
-            // centerCoordinateLabel
+            //
+            // centerCoordinateLabel (NEW)
+            //
             this.centerCoordinateLabel.AutoSize = true;
             this.centerCoordinateLabel.Location = new System.Drawing.Point(550, 20);
             this.centerCoordinateLabel.Name = "centerCoordinateLabel";
@@ -116,9 +120,9 @@ namespace TurkiyeHarita
             this.centerCoordinateLabel.TabIndex = 5;
             this.centerCoordinateLabel.Text = "Center: -";
 
-            // 
+            //
             // mapControl
-            // 
+            //
             this.mapControl.Bearing = 0F;
             this.mapControl.CanDragMap = true;
             this.mapControl.DragButton = System.Windows.Forms.MouseButtons.Left;
@@ -145,8 +149,22 @@ namespace TurkiyeHarita
             this.mapControl.TabIndex = 1;
             this.mapControl.Zoom = 6D;
 
-            // 
+            //
             // Form1
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(984, 761);
+            this.Controls.Add(this.mapControl);
+            this.Controls.Add(this.controlPanel);
+            this.Name = "Form1";
+            this.Text = "Turkiye Harita";
+
+            this.controlPanel.ResumeLayout(false);
+            this.controlPanel.PerformLayout();
+            this.ResumeLayout(false);
+        }
+
+        #endregion
+    }
+}
