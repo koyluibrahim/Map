@@ -36,7 +36,6 @@ namespace TurkiyeHarita
             this.longitudeTextBox = new System.Windows.Forms.TextBox();
             this.goButton = new System.Windows.Forms.Button();
 
-            // NEW
             this.centerCoordinateLabel = new System.Windows.Forms.Label();
 
             this.mapControl = new GMap.NET.WindowsForms.GMapControl();
@@ -53,7 +52,6 @@ namespace TurkiyeHarita
             this.controlPanel.Controls.Add(this.latitudeTextBox);
             this.controlPanel.Controls.Add(this.latitudeLabel);
 
-            // NEW
             this.controlPanel.Controls.Add(this.centerCoordinateLabel);
 
             this.controlPanel.Dock = System.Windows.Forms.DockStyle.Top;
