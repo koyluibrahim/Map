@@ -22,10 +22,12 @@ namespace TurkiyeHarita
 
             // Connect button click event
             goButton.Click += GoButton_Click;
-            this.AcceptButton = goButton;
-            // To go to coordinates with enter click
 
-            // NEW: Show center (red cross) coordinate live
+            // To go to coordinates with enter click
+            this.AcceptButton = goButton;
+            
+
+            // Show center (red cross) coordinate live
             mapControl.OnPositionChanged += MapControl_OnPositionChanged;
             mapControl.OnMapZoomChanged += MapControl_OnMapZoomChanged;
             UpdateCenterCoordinateLabel();
@@ -34,8 +36,8 @@ namespace TurkiyeHarita
         private void InitializeMap()
         {
             // Choosing map provider
-            mapControl.MapProvider = GMap.NET.MapProviders.BingMapProvider.Instance;
-            
+            mapControl.MapProvider = GMap.NET.MapProviders.BingHybridMapProvider.Instance;
+
             GMap.NET.GMaps.Instance.Mode = GMap.NET.AccessMode.ServerAndCache;
 
             // Maximum and minimum zoom settings
@@ -46,7 +48,6 @@ namespace TurkiyeHarita
             // Initial position
             mapControl.Position = new PointLatLng(39.0, 35.0);
 
-            // NEW
             UpdateCenterCoordinateLabel();
         }
 
@@ -69,7 +70,6 @@ namespace TurkiyeHarita
             // Gives warning if input coordinates is invalid
             if (!latitudeValid || !longitudeValid)
             {
-                // FIX: string tek satır, derleme hatası olmasın
                 MessageBox.Show("Please enter valid coordinates using a dot.\nExample: 41.0151");
                 return;
             }
@@ -91,29 +91,24 @@ namespace TurkiyeHarita
             // New position according to the input coordinates
             mapControl.Position = new PointLatLng(latitude, longitude);
 
-            // (Senin mantığı korudum; sadece 12 yerine 9'a sabitliyor)
             if (mapControl.Zoom < 12)
             {
                 mapControl.Zoom = 9;
             }
 
-            // NEW
             UpdateCenterCoordinateLabel();
         }
 
-        // NEW
         private void MapControl_OnPositionChanged(PointLatLng point)
         {
             UpdateCenterCoordinateLabel();
         }
 
-        // NEW
         private void MapControl_OnMapZoomChanged()
         {
             UpdateCenterCoordinateLabel();
         }
 
-        // NEW
         private void UpdateCenterCoordinateLabel()
         {
             if (centerCoordinateLabel == null) return;
