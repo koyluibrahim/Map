@@ -1,0 +1,41 @@
+using Microsoft.Data.Sqlite;
+using System.Drawing;
+using System.IO;
+
+private void LoadTile(int zoom, int x, int y)
+{
+    using (var connection = new SqliteConnection("Data Source=harita.mbtiles"))
+    {
+        connection.Open();
+
+        // MBTiles için Y ters çevrilir
+        int tmsY = (int)(Math.Pow(2, zoom) - 1 - y);
+
+        var command = connection.CreateCommand();
+        command.CommandText = @"
+        SELECT tile_data 
+        FROM tiles 
+        WHERE zoom_level = @z 
+        AND tile_column = @x 
+        AND tile_row = @y";
+
+        command.Parameters.AddWithValue("@z", zoom);
+        command.Parameters.AddWithValue("@x", x);
+        command.Parameters.AddWithValue("@y", tmsY);
+
+        var result = command.ExecuteScalar();
+
+        if (result != null)
+        {
+            byte[] tileBytes = (byte[])result;
+
+            using (var ms = new MemoryStream(tileBytes))
+            {
+                Image image = Image.FromStream(ms);
+
+                // 🔥 GÖRÜNTÜ BURADA GELİR
+                pictureBox1.Image = image;
+            }
+        }
+    }
+}
