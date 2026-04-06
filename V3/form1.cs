@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Text.RegularExpressions;
 using GMap.NET;
 using GMap.NET.MapProviders;
 using GMap.NET.WindowsForms;
@@ -11,22 +14,18 @@ namespace TurkiyeHarita
 {
     public partial class Form1 : Form
     {
-        // --- Core GMap Engine Components ---
-        private GMapControl gmap;                    // Main map controller object
-        private GMapOverlay markerOverlay;          // Overlay for search and city markers (Red)
-        private GMapOverlay polyOverlay;            // Overlay for distance measurement (Blue markers & Orange lines)
+        private GMapControl gmap;
+        private GMapOverlay markerOverlay;
+        private GMapOverlay polyOverlay;
 
-        // --- UI Control Elements ---
-        private TextBox txtLat, txtLng;             // Input fields for manual coordinates
+        private TextBox txtLat, txtLng;
         private Button btnGo, btnZoomIn, btnZoomOut, btnClearMeasurement;
         private Label lblCoordValue, lblStatusBar, lblDistanceResult;
         private Panel panelLeft;
 
-        // --- Data Management ---
-        // Stores points selected by the user (Shift+Left Click) for distance calculation
         private List<PointLatLng> measurementPoints = new List<PointLatLng>();
+        private static readonly HttpClient httpClient = new HttpClient();
 
-        // Preset coordinates for major Turkish cities for quick navigation
         private readonly string[,] cities = {
             { "Istanbul",   "41.0082", "28.9784" },
             { "Ankara",     "39.9334", "32.8597" },
@@ -43,22 +42,17 @@ namespace TurkiyeHarita
         public Form1()
         {
             InitializeComponent();
-            InitializeUI();      // Build the interface programmatically
-            InitializeMap();     // Setup GMap engine configurations
+            InitializeUI();
+            InitializeMap();
         }
 
-        /// <summary>
-        /// Programmatically creates the Sidebar, Labels, Buttons, and Layout.
-        /// No Visual Studio Designer (Designer.cs) is required.
-        /// </summary>
         private void InitializeUI()
         {
-            this.Text = "Turkey Map - Coordinate & Distance Analysis Tool";
+            this.Text = "Turkey Map - Elevation & Analysis Tool";
             this.Size = new Size(1280, 850);
             this.MinimumSize = new Size(1000, 700);
-            this.BackColor = Color.FromArgb(18, 18, 28); // Dark theme background
+            this.BackColor = Color.FromArgb(18, 18, 28);
 
-            // Bottom bar for application status
             lblStatusBar = new Label
             {
                 Dock = DockStyle.Bottom,
@@ -68,15 +62,12 @@ namespace TurkiyeHarita
                 Font = new Font("Courier New", 9),
                 TextAlign = ContentAlignment.MiddleLeft,
                 Padding = new Padding(10, 0, 0, 0),
-                Text = "System Ready"
+                Text = "Ready"
             };
 
-            // Sidebar Panel for controls
             panelLeft = new Panel { Dock = DockStyle.Left, Width = 270, BackColor = Color.FromArgb(22, 22, 35) };
 
             int y = 20;
-
-            // --- Coordinate Input Section ---
             CreateLabel("COORDINATE INPUT", 8, FontStyle.Bold, Color.FromArgb(130, 130, 160), y, 240); y += 22;
             CreateLabel("Latitude:", 9, FontStyle.Regular, Color.White, y, 240); y += 20;
             txtLat = CreateTextInput(y, "39.9334"); y += 32;
@@ -84,10 +75,9 @@ namespace TurkiyeHarita
             txtLng = CreateTextInput(y, "32.8597"); y += 36;
 
             btnGo = CreateStandardButton("▶   GO TO LOCATION", y, Color.FromArgb(0, 122, 204));
-            btnGo.Click += (s, e) => HandleGoButtonClick();
+            btnGo.Click += async (s, e) => await HandleGoButtonClick();
             y += 48; DrawSeparator(y); y += 14;
 
-            // --- Map Navigation Controls ---
             CreateLabel("MAP ZOOM", 8, FontStyle.Bold, Color.FromArgb(130, 130, 160), y, 240); y += 24;
             btnZoomIn = new Button { Text = "➕", Location = new Point(15, y), Size = new Size(115, 32), BackColor = Color.FromArgb(45, 45, 65), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
             btnZoomOut = new Button { Text = "➖", Location = new Point(140, y), Size = new Size(115, 32), BackColor = Color.FromArgb(45, 45, 65), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
@@ -96,94 +86,95 @@ namespace TurkiyeHarita
             panelLeft.Controls.Add(btnZoomIn); panelLeft.Controls.Add(btnZoomOut);
             y += 44; DrawSeparator(y); y += 14;
 
-            // --- Quick City Buttons ---
             CreateLabel("QUICK CITIES", 8, FontStyle.Bold, Color.FromArgb(130, 130, 160), y, 240); y += 24;
             for (int i = 0; i < cities.GetLength(0); i++)
             {
                 string name = cities[i, 0]; string lat = cities[i, 1]; string lng = cities[i, 2];
                 int col = (i % 2 == 0) ? 15 : 135; if (i % 2 == 0 && i > 0) y += 34;
                 var btn = new Button { Text = name, Location = new Point(col, y), Size = new Size(112, 28), Font = new Font("Segoe UI", 8.5f), BackColor = Color.FromArgb(38, 38, 58), ForeColor = Color.LightGray, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand, Tag = new string[] { lat, lng } };
-                btn.Click += (s, e) => HandleCityButtonClick(s);
+                btn.Click += async (s, e) => await HandleCityButtonClick(s);
                 panelLeft.Controls.Add(btn);
             }
             y += 46; DrawSeparator(y); y += 14;
 
-            // --- Measurement Tools ---
-            CreateLabel("DISTANCE MEASUREMENT", 8, FontStyle.Bold, Color.FromArgb(130, 130, 160), y, 240); y += 22;
-            CreateLabel("SHIFT + LeftClick: Add Point", 8, FontStyle.Italic, Color.FromArgb(180, 180, 100), y, 240); y += 20;
+            CreateLabel("DISTANCE & ELEVATION", 8, FontStyle.Bold, Color.FromArgb(130, 130, 160), y, 240); y += 22;
+            CreateLabel("SHIFT+LeftClick: Add Point", 8, FontStyle.Italic, Color.FromArgb(180, 180, 100), y, 240); y += 20;
             lblDistanceResult = CreateLabel("Total Distance: 0.00 km", 9, FontStyle.Bold, Color.FromArgb(255, 180, 50), y, 240); y += 25;
             btnClearMeasurement = new Button { Text = "🗑 CLEAR MEASUREMENT", Location = new Point(15, y), Size = new Size(240, 30), Font = new Font("Segoe UI", 8, FontStyle.Bold), BackColor = Color.FromArgb(80, 40, 40), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
             btnClearMeasurement.Click += (s, e) => ClearDistance();
             panelLeft.Controls.Add(btnClearMeasurement); y += 45; DrawSeparator(y); y += 14;
 
-            // --- Live Crosshair Tracker ---
             CreateLabel("LIVE COORDINATES (+)", 8, FontStyle.Bold, Color.FromArgb(130, 130, 160), y, 240); y += 22;
-            lblCoordValue = CreateLabel("Loading...", 9, FontStyle.Bold, Color.FromArgb(80, 220, 140), y, 240);
-            lblCoordValue.Height = 50;
+            lblCoordValue = CreateLabel("Fetching...", 9, FontStyle.Bold, Color.FromArgb(80, 220, 140), y, 240);
+            lblCoordValue.Height = 85;
 
-            // --- Map View Configuration ---
             gmap = new GMapControl { Dock = DockStyle.Fill, MinZoom = 5, MaxZoom = 19, Zoom = 6, ShowCenter = true };
-            gmap.MouseClick += (s, e) => HandleMapClick(e);
-            gmap.OnPositionChanged += (p) => lblCoordValue.Text = $"Lat: {p.Lat:F6}°\nLng: {p.Lng:F6}°";
+            gmap.MouseClick += async (s, e) => await HandleMapClick(e);
+            gmap.OnPositionChanged += async (p) => await UpdateLiveStats(p);
 
             this.Controls.Add(gmap); this.Controls.Add(panelLeft); this.Controls.Add(lblStatusBar);
         }
 
         private void InitializeMap()
         {
-            // Set UserAgent to prevent 403 Forbidden errors from tile servers
             GMapProvider.UserAgent = "TurkeyMapApp/1.0";
-            gmap.MapProvider = GMapProviders.BingHybridMap; // Combined Satellite and Road data
-            GMaps.Instance.Mode = AccessMode.ServerAndCache; // Enables offline caching
-            gmap.Position = new PointLatLng(39.0, 35.5);    // Center of Turkey
+            gmap.MapProvider = GMapProviders.BingHybridMap;
+            GMaps.Instance.Mode = AccessMode.ServerAndCache;
+            gmap.Position = new PointLatLng(39.0, 35.5);
             gmap.DragButton = MouseButtons.Left;
-            
-            // Setup layers
             markerOverlay = new GMapOverlay("markers");
             polyOverlay = new GMapOverlay("polygons");
             gmap.Overlays.Add(markerOverlay);
             gmap.Overlays.Add(polyOverlay);
-            
-            lblStatusBar.Text = "Map Engine Initialized: Bing Hybrid Mode";
         }
 
-        /// <summary>
-        /// Handles mouse interactions on the map.
-        /// Right Click: Single point marker.
-        /// Shift + Left Click: Multi-point distance measurement.
-        /// </summary>
-        private void HandleMapClick(MouseEventArgs e)
+        private async Task UpdateLiveStats(PointLatLng p)
+        {
+            // Harita her hareket ettiğinde anlık yükseklik ve koordinat güncellemesi
+            string elev = await GetElevationAsync(p.Lat, p.Lng);
+            lblCoordValue.Text = $"Lat: {p.Lat:F6}°\nLng: {p.Lng:F6}°\nAlt: {elev}";
+        }
+
+        private async Task<string> GetElevationAsync(double lat, double lng)
+        {
+            try
+            {
+                lblStatusBar.Text = "⏳ Fetching elevation...";
+                string url = $"https://api.open-elevation.com/api/v1/lookup?locations={lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+                string response = await httpClient.GetStringAsync(url);
+                var match = Regex.Match(response, @"""elevation"":\s*([\d.-]+)");
+                lblStatusBar.Text = "✔ Elevation received";
+                return match.Success ? $"{match.Groups[1].Value} m" : "N/A";
+            }
+            catch { lblStatusBar.Text = "❌ API Error"; return "N/A"; }
+        }
+
+        private async Task HandleMapClick(MouseEventArgs e)
         {
             var p = gmap.FromLocalToLatLng(e.X, e.Y);
-
-            // Distance Measurement Logic
             if (e.Button == MouseButtons.Left && ModifierKeys == Keys.Shift)
             {
+                string elev = await GetElevationAsync(p.Lat, p.Lng);
                 measurementPoints.Add(p);
-                DrawDistance();
-                lblStatusBar.Text = $"Added point: {p.Lat:F4}, {p.Lng:F4}";
+                DrawDistance(p, elev); // Koordinat ve yüksekliği gönder
             }
-            // Manual Pin Logic
             else if (e.Button == MouseButtons.Right)
             {
+                string elev = await GetElevationAsync(p.Lat, p.Lng);
                 txtLat.Text = p.Lat.ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
                 txtLng.Text = p.Lng.ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
-                AddMarker(p, $"Lat: {p.Lat:F4}\nLng: {p.Lng:F4}");
+                AddMarker(p, $"Lat: {p.Lat:F4}\nLng: {p.Lng:F4}\nAlt: {elev}");
             }
         }
 
-        /// <summary>
-        /// Updates the polyline and measurement markers on the map.
-        /// Calculates the total Great-Circle distance in kilometers.
-        /// </summary>
-        private void DrawDistance()
+        private void DrawDistance(PointLatLng lastPoint, string lastElev)
         {
             polyOverlay.Clear();
-            
+            // Her mesafe noktası için hem koordinat hem yükseklik gösteren marker ekle
             foreach (var point in measurementPoints)
             {
                 var circle = new GMarkerGoogle(point, GMarkerGoogleType.blue_small);
-                circle.ToolTipText = $"Lat: {point.Lat:F4}\nLng: {point.Lng:F4}";
+                circle.ToolTipText = $"Lat: {point.Lat:F4}\nLng: {point.Lng:F4}\nAlt: {lastElev}";
                 circle.ToolTipMode = MarkerTooltipMode.Always;
                 circle.ToolTip = new CustomToolTip(circle);
                 polyOverlay.Markers.Add(circle);
@@ -191,91 +182,63 @@ namespace TurkiyeHarita
 
             if (measurementPoints.Count > 1)
             {
-                var route = new GMapRoute(measurementPoints, "DistRoute");
-                route.Stroke = new Pen(Color.FromArgb(255, 180, 50), 3); // Orange path
+                var route = new GMapRoute(measurementPoints, "Dist");
+                route.Stroke = new Pen(Color.FromArgb(255, 180, 50), 3);
                 polyOverlay.Routes.Add(route);
-                
                 double totalKm = 0;
                 for (int i = 0; i < measurementPoints.Count - 1; i++)
                     totalKm += GMapProviders.EmptyProvider.Projection.GetDistance(measurementPoints[i], measurementPoints[i + 1]);
-                
                 lblDistanceResult.Text = $"Total Distance: {totalKm:F2} km";
             }
         }
 
-        private void HandleGoButtonClick()
+        private async Task HandleGoButtonClick()
         {
             if (double.TryParse(txtLat.Text.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lat) &&
                 double.TryParse(txtLng.Text.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lng))
             {
+                string elev = await GetElevationAsync(lat, lng);
                 gmap.Position = new PointLatLng(lat, lng);
-                AddMarker(gmap.Position, $"Lat: {lat:F4}\nLng: {lng:F4}");
+                AddMarker(gmap.Position, $"Lat: {lat:F4}\nLng: {lng:F4}\nAlt: {elev}");
             }
-            else { MessageBox.Show("Please enter valid numeric coordinates.", "Input Error"); }
         }
 
-        private void HandleCityButtonClick(object sender)
+        private async Task HandleCityButtonClick(object sender)
         {
             var coords = (string[])((Button)sender).Tag;
             double lat = double.Parse(coords[0], System.Globalization.CultureInfo.InvariantCulture);
             double lng = double.Parse(coords[1], System.Globalization.CultureInfo.InvariantCulture);
-            
             txtLat.Text = coords[0]; txtLng.Text = coords[1];
+            string elev = await GetElevationAsync(lat, lng);
             gmap.Position = new PointLatLng(lat, lng);
-            AddMarker(gmap.Position, $"City: {((Button)sender).Text}\nLat: {lat:F4}\nLng: {lng:F4}");
+            AddMarker(gmap.Position, $"Lat: {lat:F4}\nLng: {lng:F4}\nAlt: {elev}");
         }
 
         private void AddMarker(PointLatLng loc, string title)
         {
             markerOverlay.Markers.Clear();
             var m = new GMarkerGoogle(loc, GMarkerGoogleType.red);
-            m.ToolTipText = title; 
-            m.ToolTipMode = MarkerTooltipMode.Always;
-            m.ToolTip = new CustomToolTip(m); 
-            markerOverlay.Markers.Add(m);
+            m.ToolTipText = title; m.ToolTipMode = MarkerTooltipMode.Always;
+            m.ToolTip = new CustomToolTip(m); markerOverlay.Markers.Add(m);
         }
 
-        private void ClearDistance() 
-        { 
-            measurementPoints.Clear(); 
-            polyOverlay.Clear(); 
-            lblDistanceResult.Text = "Total Distance: 0.00 km"; 
-            lblStatusBar.Text = "Measurement cleared.";
-        }
+        private void ClearDistance() { measurementPoints.Clear(); polyOverlay.Clear(); lblDistanceResult.Text = "Total Distance: 0.00 km"; }
 
-        // --- UI Element Factory Methods ---
         private Button CreateStandardButton(string t, int y, Color c) { var b = new Button { Text = t, Location = new Point(15, y), Size = new Size(240, 38), Font = new Font("Segoe UI", 10, FontStyle.Bold), BackColor = c, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand }; panelLeft.Controls.Add(b); return b; }
         private Label CreateLabel(string t, float s, FontStyle st, Color c, int y, int w) { var l = new Label { Text = t, ForeColor = c, Font = new Font("Segoe UI", s, st), Location = new Point(15, y), Size = new Size(w, 20), AutoSize = false }; panelLeft.Controls.Add(l); return l; }
         private TextBox CreateTextInput(int y, string d) { var t = new TextBox { Location = new Point(15, y), Size = new Size(240, 26), Font = new Font("Courier New", 10), BackColor = Color.FromArgb(38, 38, 58), ForeColor = Color.LightGreen, BorderStyle = BorderStyle.FixedSingle, Text = d }; panelLeft.Controls.Add(t); return t; }
         private void DrawSeparator(int y) => panelLeft.Controls.Add(new Label { Location = new Point(15, y), Size = new Size(240, 1), BackColor = Color.FromArgb(55, 55, 75) });
     }
 
-    /// <summary>
-    /// Custom Renderer for GMap ToolTips.
-    /// Provides a clean, modern, and centered tooltip box.
-    /// </summary>
     public class CustomToolTip : GMapToolTip
     {
-        public CustomToolTip(GMapMarker m) : base(m) 
-        { 
-            Stroke = new Pen(Color.Gray, 1); 
-            Fill = Brushes.White; 
-            Foreground = Brushes.Black; 
-            Font = new Font("Segoe UI", 9); 
-        }
-
+        public CustomToolTip(GMapMarker m) : base(m) { Stroke = new Pen(Color.Gray, 1); Fill = Brushes.White; Foreground = Brushes.Black; Font = new Font("Segoe UI", 9); }
         public override void OnRender(Graphics g)
         {
             var sz = g.MeasureString(Marker.ToolTipText, Font);
-            int padding = 8;
-            int width = (int)sz.Width + (padding * 2); 
-            int height = (int)sz.Height + (padding * 2);
-            
-            // Positioning the box above the marker
-            var rect = new Rectangle(Marker.LocalPosition.X - (width / 2), Marker.LocalPosition.Y - Marker.Size.Height - height - 2, width, height);
-            
-            g.FillRectangle(Fill, rect); 
-            g.DrawRectangle(Stroke, rect);
+            int p = 8; int w = (int)sz.Width + (p * 2); int h = (int)sz.Height + (p * 2);
+            var rect = new Rectangle(Marker.LocalPosition.X - (w / 2), Marker.LocalPosition.Y - Marker.Size.Height - h - 2, w, h);
+            g.FillRectangle(Fill, rect); g.DrawRectangle(Stroke, rect);
             g.DrawString(Marker.ToolTipText, Font, Foreground, rect, new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
         }
     }
