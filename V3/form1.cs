@@ -105,12 +105,12 @@ namespace TurkiyeHarita
             panelLeft.Controls.Add(btnClearMeasurement); y += 45; DrawSeparator(y); y += 14;
 
             CreateLabel("LIVE COORDINATES (+)", 8, FontStyle.Bold, Color.FromArgb(130, 130, 160), y, 240); y += 22;
-            lblCoordValue = CreateLabel("", 9, FontStyle.Bold, Color.FromArgb(80, 220, 140), y, 240);
-            lblCoordValue.Height = 55;
+            lblCoordValue = CreateLabel("Fetching...", 9, FontStyle.Bold, Color.FromArgb(80, 220, 140), y, 240);
+            lblCoordValue.Height = 85;
 
             gmap = new GMapControl { Dock = DockStyle.Fill, MinZoom = 5, MaxZoom = 19, Zoom = 6, ShowCenter = true };
             gmap.MouseClick += async (s, e) => await HandleMapClick(e);
-            gmap.OnPositionChanged += (p) => lblCoordValue.Text = $"Lat: {p.Lat:F6}°\nLng: {p.Lng:F6}°";
+            gmap.OnPositionChanged += async (p) => await UpdateLiveStats(p);
 
             this.Controls.Add(gmap); this.Controls.Add(panelLeft); this.Controls.Add(lblStatusBar);
         }
@@ -126,7 +126,13 @@ namespace TurkiyeHarita
             polyOverlay = new GMapOverlay("polygons");
             gmap.Overlays.Add(markerOverlay);
             gmap.Overlays.Add(polyOverlay);
-            lblCoordValue.Text = $"Lat: {gmap.Position.Lat:F6}°\nLng: {gmap.Position.Lng:F6}°";
+        }
+
+        private async Task UpdateLiveStats(PointLatLng p)
+        {
+            // Harita her hareket ettiğinde anlık yükseklik ve koordinat güncellemesi
+            string elev = await GetElevationAsync(p.Lat, p.Lng);
+            lblCoordValue.Text = $"Lat: {p.Lat:F6}°\nLng: {p.Lng:F6}°\nAlt: {elev}";
         }
 
         private async Task<string> GetElevationAsync(double lat, double lng)
@@ -150,7 +156,7 @@ namespace TurkiyeHarita
             {
                 string elev = await GetElevationAsync(p.Lat, p.Lng);
                 measurementPoints.Add(p);
-                DrawDistance(elev);
+                DrawDistance(p, elev); // Koordinat ve yüksekliği gönder
             }
             else if (e.Button == MouseButtons.Right)
             {
@@ -161,17 +167,19 @@ namespace TurkiyeHarita
             }
         }
 
-        private void DrawDistance(string lastElev)
+        private void DrawDistance(PointLatLng lastPoint, string lastElev)
         {
             polyOverlay.Clear();
+            // Her mesafe noktası için hem koordinat hem yükseklik gösteren marker ekle
             foreach (var point in measurementPoints)
             {
                 var circle = new GMarkerGoogle(point, GMarkerGoogleType.blue_small);
-                circle.ToolTipText = $"Alt: {lastElev}";
+                circle.ToolTipText = $"Lat: {point.Lat:F4}\nLng: {point.Lng:F4}\nAlt: {lastElev}";
                 circle.ToolTipMode = MarkerTooltipMode.Always;
                 circle.ToolTip = new CustomToolTip(circle);
                 polyOverlay.Markers.Add(circle);
             }
+
             if (measurementPoints.Count > 1)
             {
                 var route = new GMapRoute(measurementPoints, "Dist");
@@ -216,7 +224,6 @@ namespace TurkiyeHarita
 
         private void ClearDistance() { measurementPoints.Clear(); polyOverlay.Clear(); lblDistanceResult.Text = "Total Distance: 0.00 km"; }
 
-        // UI Helper Methods
         private Button CreateStandardButton(string t, int y, Color c) { var b = new Button { Text = t, Location = new Point(15, y), Size = new Size(240, 38), Font = new Font("Segoe UI", 10, FontStyle.Bold), BackColor = c, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand }; panelLeft.Controls.Add(b); return b; }
         private Label CreateLabel(string t, float s, FontStyle st, Color c, int y, int w) { var l = new Label { Text = t, ForeColor = c, Font = new Font("Segoe UI", s, st), Location = new Point(15, y), Size = new Size(w, 20), AutoSize = false }; panelLeft.Controls.Add(l); return l; }
         private TextBox CreateTextInput(int y, string d) { var t = new TextBox { Location = new Point(15, y), Size = new Size(240, 26), Font = new Font("Courier New", 10), BackColor = Color.FromArgb(38, 38, 58), ForeColor = Color.LightGreen, BorderStyle = BorderStyle.FixedSingle, Text = d }; panelLeft.Controls.Add(t); return t; }
