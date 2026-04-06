@@ -1,41 +1,20 @@
-using Microsoft.Data.Sqlite;
-using System.Drawing;
-using System.IO;
+using Mapsui.UI.WinForms;
+using Mapsui.Tiling.Layers;
+using BruTile.MbTiles;
 
-private void LoadTile(int zoom, int x, int y)
-{
-    using (var connection = new SqliteConnection("Data Source=harita.mbtiles"))
-    {
-        connection.Open();
+// Harita kontrolünü oluştur ve forma ekle
+var mapControl = new MapControl();
+mapControl.Dock = DockStyle.Fill;
+this.Controls.Add(mapControl);
 
-        // MBTiles için Y ters çevrilir
-        int tmsY = (int)(Math.Pow(2, zoom) - 1 - y);
+// MBTiles dosyasını oku
+string mbtilesYolu = @"C:\dosya_yolu\harita.mbtiles";
 
-        var command = connection.CreateCommand();
-        command.CommandText = @"
-        SELECT tile_data 
-        FROM tiles 
-        WHERE zoom_level = @z 
-        AND tile_column = @x 
-        AND tile_row = @y";
+// SQLite bağlantısı ile tile kaynağını oluştur (false: read-only)
+var mbTilesKaynagi = new MbTilesTileSource(new SQLiteConnectionString(mbtilesYolu, false));
 
-        command.Parameters.AddWithValue("@z", zoom);
-        command.Parameters.AddWithValue("@x", x);
-        command.Parameters.AddWithValue("@y", tmsY);
+// Kaynağı bir harita katmanına (layer) dönüştür
+var mbTilesKatmani = new TileLayer(mbTilesKaynagi) { Name = "Çevrimdışı Harita" };
 
-        var result = command.ExecuteScalar();
-
-        if (result != null)
-        {
-            byte[] tileBytes = (byte[])result;
-
-            using (var ms = new MemoryStream(tileBytes))
-            {
-                Image image = Image.FromStream(ms);
-
-                // 🔥 GÖRÜNTÜ BURADA GELİR
-                pictureBox1.Image = image;
-            }
-        }
-    }
-}
+// Katmanı Mapsui haritasına ekle
+mapControl.Map.Layers.Add(mbTilesKatmani);
